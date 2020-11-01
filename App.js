@@ -1,180 +1,123 @@
-import React, { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import { 
-  NavigationContainer, 
-  DefaultTheme as NavigationDefaultTheme,
-  DarkTheme as NavigationDarkTheme
-} from '@react-navigation/native';
+import React from 'react';
+
+import { StyleSheet, Text, View, Image } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import { FontAwesome,Ionicons } from '@expo/vector-icons';
+import HomeScreen from './src/screens/HomeScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import SignupScreen from './src/screens/SignUpScreen';
+import SinglePostScreen from './src/screens/SinglePostScreen';
+import {AuthProvider,AuthContext} from './src/providers/AuthProvider';
+import NotificationScreen from './src/screens/NotificationScreen';
+import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
+import ProfileScreen from './src/screens/ProfieScreen';
+import ChatScreen from './src/screens/ChatScreen';
+import LogoutScreen from './src/screens/LogoutScreen';
+import SocialMediaInfoScreen from './src/screens/SocialMediaInfoScreen';
+import FriendListScreen from './src/screens/FriendListScreen';
 
-import { 
-  Provider as PaperProvider, 
-  DefaultTheme as PaperDefaultTheme,
-  DarkTheme as PaperDarkTheme 
-} from 'react-native-paper';
-
-import { DrawerContent } from './screens/DrawerContent';
-
-import MainTabScreen from './screens/MainTabScreen';
-import SupportScreen from './screens/SupportScreen';
-import SettingsScreen from './screens/SettingsScreen';
-import BookmarkScreen from './screens/BookmarkScreen';
-import ChatScreen from './screens/ChatScreen';
-
-import { AuthContext } from './components/context';
-
-import RootStackScreen from './screens/RootStackScreen';
-
-import AsyncStorage from '@react-native-community/async-storage';
-
+const Authstack = createStackNavigator();
+const Notificationstack = createStackNavigator();
+const HomeTab = createMaterialBottomTabNavigator();
 const Drawer = createDrawerNavigator();
 
-const App = () => {
-  // const [isLoading, setIsLoading] = React.useState(true);
-  // const [userToken, setUserToken] = React.useState(null); 
-
-  const [isDarkTheme, setIsDarkTheme] = React.useState(false);
-
-  const initialLoginState = {
-    isLoading: true,
-    userName: null,
-    userToken: null,
-  };
-
-  const CustomDefaultTheme = {
-    ...NavigationDefaultTheme,
-    ...PaperDefaultTheme,
-    colors: {
-      ...NavigationDefaultTheme.colors,
-      ...PaperDefaultTheme.colors,
-      background: '#ffffff',
-      text: '#333333'
-    }
-  }
-  
-  const CustomDarkTheme = {
-    ...NavigationDarkTheme,
-    ...PaperDarkTheme,
-    colors: {
-      ...NavigationDarkTheme.colors,
-      ...PaperDarkTheme.colors,
-      background: '#333333',
-      text: '#ffffff'
-    }
-  }
-
-  const theme = isDarkTheme ? CustomDarkTheme : CustomDefaultTheme;
-
-  const loginReducer = (prevState, action) => {
-    switch( action.type ) {
-      case 'RETRIEVE_TOKEN': 
-        return {
-          ...prevState,
-          userToken: action.token,
-          isLoading: false,
-        };
-      case 'LOGIN': 
-        return {
-          ...prevState,
-          userName: action.id,
-          userToken: action.token,
-          isLoading: false,
-        };
-      case 'LOGOUT': 
-        return {
-          ...prevState,
-          userName: null,
-          userToken: null,
-          isLoading: false,
-        };
-      case 'REGISTER': 
-        return {
-          ...prevState,
-          userName: action.id,
-          userToken: action.token,
-          isLoading: false,
-        };
-    }
-  };
-
-  const [loginState, dispatch] = React.useReducer(loginReducer, initialLoginState);
-
-  const authContext = React.useMemo(() => ({
-    signIn: async(foundUser) => {
-      // setUserToken('fgkj');
-      // setIsLoading(false);
-      const userToken = String(foundUser[0].userToken);
-      const userName = foundUser[0].username;
-      
-      try {
-        await AsyncStorage.setItem('userToken', userToken);
-      } catch(e) {
-        console.log(e);
-      }
-      // console.log('user token: ', userToken);
-      dispatch({ type: 'LOGIN', id: userName, token: userToken });
-    },
-    signOut: async() => {
-      // setUserToken(null);
-      // setIsLoading(false);
-      try {
-        await AsyncStorage.removeItem('userToken');
-      } catch(e) {
-        console.log(e);
-      }
-      dispatch({ type: 'LOGOUT' });
-    },
-    signUp: () => {
-      // setUserToken('fgkj');
-      // setIsLoading(false);
-    },
-    toggleTheme: () => {
-      setIsDarkTheme( isDarkTheme => !isDarkTheme );
-    }
-  }), []);
-
-  useEffect(() => {
-    setTimeout(async() => {
-      // setIsLoading(false);
-      let userToken;
-      userToken = null;
-      try {
-        userToken = await AsyncStorage.getItem('userToken');
-      } catch(e) {
-        console.log(e);
-      }
-      // console.log('user token: ', userToken);
-      dispatch({ type: 'RETRIEVE_TOKEN', token: userToken });
-    }, 1000);
-  }, []);
-
-  if( loginState.isLoading ) {
-    return(
-      <View style={{flex:1,justifyContent:'center',alignItems:'center'}}>
-        <ActivityIndicator size="large"/>
-      </View>
-    );
-  }
-  return (
-    <PaperProvider theme={theme}>
-    <AuthContext.Provider value={authContext}>
-    <NavigationContainer theme={theme}>
-      { loginState.userToken !== null ? (
-        <Drawer.Navigator drawerContent={props => <DrawerContent {...props} />}>
-          <Drawer.Screen name="HomeDrawer" component={MainTabScreen} />
-          <Drawer.Screen name="SupportScreen" component={SupportScreen} />
-          <Drawer.Screen name="SettingsScreen" component={SettingsScreen} />
-          <Drawer.Screen name="BookmarkScreen" component={BookmarkScreen} />
-          <Drawer.Screen name="ChatScreen" component={ChatScreen} />
-        </Drawer.Navigator>
-      )
-    :
-      <RootStackScreen/>
-    }
-    </NavigationContainer>
-    </AuthContext.Provider>
-    </PaperProvider>
+const DrawerScreens=()=>{
+  return(
+    <Drawer.Navigator initialRouteName="Home">
+        <Drawer.Screen name="Home" component={NotificationScreenStack} />
+        <Drawer.Screen name="Social Medias" component={SocialMediaInfoScreen} />
+        <Drawer.Screen name="Friends" component={FriendListScreen} />
+        <Drawer.Screen name="Log Out" component={LogoutScreen}/>
+  </Drawer.Navigator>
   );
 }
 
-export default App;
+const HomeScreenTab=()=> {
+  return(
+    <HomeTab.Navigator 
+    initialRouteName="Home"
+      activeColor="#FFFFFF"
+      shifting={true}>
+      <HomeTab.Screen name="Home" 
+        component={HomeScreen}
+        options={{
+          tabBarLabel: 'Home',
+          tabBarColor: '#3a0088',
+          tabBarIcon: ({color}) => (
+            <FontAwesome name="home" size={24} color={color} />
+          ),
+        }}
+        />
+
+      <HomeTab.Screen name="Chat" 
+        component={ChatScreen}
+        options={{
+          tabBarLabel: 'Chat',
+          tabBarColor: '#00bfff',
+          tabBarIcon: ({color}) => (
+           <Ionicons name="ios-chatboxes" size={24} color={color} />
+          ),
+        }} />
+
+      <HomeTab.Screen name="Notification" 
+        component={NotificationScreen}
+        options={{
+          tabBarLabel: 'Notification',
+          tabBarColor: '#006400',
+          tabBarIcon: ({color}) => (
+           <Ionicons name="ios-notifications" size={24} color={color} />
+          ),
+        }} />
+
+      <HomeTab.Screen name="Profile" 
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarColor: '#daa520',
+          tabBarIcon: ({color}) => (
+           <Ionicons name="ios-person" size={24} color={color} />
+          ),
+        }} />
+    </HomeTab.Navigator>);
+};
+
+
+const NotificationScreenStack=()=>{
+  return(<Notificationstack.Navigator >
+    <Notificationstack.Screen name="Home" component={HomeScreenTab} options={{ headerShown: false }}/>
+    <Notificationstack.Screen name="Post" component={SinglePostScreen} options={{ headerShown: false }}/>
+  </Notificationstack.Navigator>)
+
+};
+
+const AuthScreenStack=()=> {
+  return(<Authstack.Navigator >
+    <Authstack.Screen name='Log In' component={LoginScreen} options={{ headerShown: false }}/>
+    <Authstack.Screen name='Sign Up' component={SignupScreen} options={{ headerShown: false }}/>
+  </Authstack.Navigator>);
+};
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AuthContext.Consumer>
+        
+        {(auth)=>(
+          <NavigationContainer>
+            {auth.isLogged?<DrawerScreens/>:<AuthScreenStack/>}
+          </NavigationContainer>)}
+      </AuthContext.Consumer>
+    </AuthProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
